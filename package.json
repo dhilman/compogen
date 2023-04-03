@@ -1,0 +1,30 @@
+{
+  "name": "new-component",
+  "version": "1.0.0",
+  "description": "Script to create new react components",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": {
+    "new-component": "./src/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dhilman/new-component.git"
+  },
+  "keywords": [
+    "react",
+    "component",
+    "typescript"
+  ],
+  "author": "David Hilman",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dhilman/new-component/issues"
+  },
+  "homepage": "https://github.com/dhilman/new-component#readme",
+  "dependencies": {
+    "commander": "^9.5.0"
+  }
+}
