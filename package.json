@@ -1,6 +1,6 @@
 {
   "name": "compogen",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A CLI tool for creating new React components with custom templates",
   "homepage": "https://github.com/dhilman/compogen",
   "bugs": {

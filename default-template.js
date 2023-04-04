@@ -34,6 +34,20 @@ export const Default: Story = {
     args: { 
     },
 }`,
+        functionalWithRef: `import React, { forwardRef } from "react";
+        
+interface Props {
+}
+
+const $COMPONENT_NAME = forwardRef<HTMLElement, Props>(({
+}: Props, ref) => {
+    return (
+        <div ref={ref}>
+        </div>
+    );
+});
+
+export default $COMPONENT_NAME;`,
         index: `export { default } from "./$COMPONENT_NAME";`
     }
 };

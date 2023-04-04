@@ -4,6 +4,8 @@ import * as fs from 'fs-extra';
 import yargs from 'yargs';
 // @ts-ignore
 import chalk from 'chalk';
+// @ts-ignore
+import defaultConfig from './default-template';
 
 interface Config {
   dir: string;
@@ -24,10 +26,11 @@ interface Config {
 const readTemplateConfig = (): Partial<Config> => {
   try {
     const templateConfigPath = path.resolve(process.cwd(), 'template.js');
-    return require(templateConfigPath);
+    const userConfig = require(templateConfigPath);
+    return { ...defaultConfig, ...userConfig }
   } catch (error) {
     console.log(chalk.yellow('No template.js found or invalid format. Using default configuration.'));
-    return {};
+    return defaultConfig;
   }
 };
 
@@ -45,69 +48,76 @@ const index = (config: Config) => {
 
   fs.ensureDirSync(componentDir);
 
-  const componentTemplate = (config.templates?.[config.t] || '').replace(/\$COMPONENT_NAME/g, config.componentName);
-
-  fs.writeFileSync(componentPath, componentTemplate, {encoding: 'utf-8'});
-  console.log(chalk.green(`Component created successfully: ${componentPath}`));
+  const componentTemplate = (config.templates?.[config.t] || '')
+  createTemplate(componentPath, componentTemplate, config.componentName);
 
   if (config.s) {
-    const storybookTemplate = (config.templates?.storybook || '').replace(/\$COMPONENT_NAME/g, config.componentName);
-    const storybookPath = path.join(componentDir, `${config.componentName}.stories.${config.ext}`);
-    fs.writeFileSync(storybookPath, storybookTemplate, {encoding: 'utf-8'});
-    console.log(chalk.green(`Storybook file created successfully: ${storybookPath}`));
+    const storybookTemplate = (config.templates?.storybook || '');
+    const storybookPath = path.join(componentDir, `${config.componentName}.stories.${config.ext}x`);
+    createTemplate(storybookPath, storybookTemplate, config.componentName);
   }
-
   if (config.i) {
-    const indexTemplate = (config.templates?.index || `export { default } from './${config.componentName}';`)
-      .replace(/\$COMPONENT_NAME/g, config.componentName);
+    const indexTemplate = (config.templates?.index || `export { default } from './${config.componentName}';`);
     const indexPath = path.join(componentDir, `index.${config.ext}`);
-    fs.writeFileSync(indexPath, indexTemplate, {encoding: 'utf-8'});
-    console.log(chalk.green(`Index file created successfully: ${indexPath}`));
+    createTemplate(indexPath, indexTemplate, config.componentName);
   }
-
 };
 
+const createTemplate = (fpath: string, template: string, componentName: string) => {
+  const fname = path.basename(fpath);
+  if (!template) {
+    console.log(chalk.yellow(`No template found for ${fname}. Skipping.`));
+  }
+  const data = template.replace(/\$COMPONENT_NAME/g, componentName);
+  fs.writeFileSync(fpath, data, {encoding: 'utf-8'});
+  console.log(chalk.green(`File created successfully: ${fname}`));
+}
+
+const options: {
+  [key: string]: yargs.Options;
+} = {
+  dir: {
+    alias: 'd',
+    type: 'string',
+    description: 'Path to directory for component',
+    default: 'src/components',
+  },
+  ext: {
+    alias: 'e',
+    type: 'string',
+    choices: ['ts', 'js'],
+    description: 'File extension',
+    default: 'ts',
+  },
+  i: {
+    alias: 'index',
+    type: 'boolean',
+    description: 'Create an index file for the component',
+    default: false,
+  },
+  n: {
+    alias: 'nested',
+    type: 'boolean',
+    description: 'Create a component inside its own directory with component name',
+    default: true,
+  },
+  t: {
+    alias: 'type',
+    type: 'string',
+    choices: ['functional', 'functionalWithRef'],
+    description: 'Type of component',
+    default: 'functional',
+  },
+  s: {
+    alias: 'storybook',
+    type: 'boolean',
+    description: 'Create a Storybook file from template',
+    default: false,
+  },
+}
+
 const argv = yargs(process.argv.slice(2))
-  .options({
-    dir: {
-      alias: 'd',
-      type: 'string',
-      description: 'Path to directory for component',
-      default: 'src/components',
-    },
-    ext: {
-      alias: 'e',
-      type: 'string',
-      choices: ['ts', 'js'],
-      description: 'File extension',
-      default: 'ts',
-    },
-    i: {
-      alias: 'index',
-      type: 'boolean',
-      description: 'Create an index file for the component',
-      default: false,
-    },
-    n: {
-      alias: 'nested',
-      type: 'boolean',
-      description: 'Create a component inside its own directory with component name',
-      default: true,
-    },
-    t: {
-      alias: 'type',
-      type: 'string',
-      choices: ['functional', 'functionalWithRef'],
-      description: 'Type of component',
-      default: 'functional',
-    },
-    s: {
-      alias: 'storybook',
-      type: 'boolean',
-      description: 'Create a Storybook file from template',
-      default: false,
-    },
-  })
+  .options(options)
   .config(readTemplateConfig())
   .command('$0 <componentName>', 'Create a new component', (yargs) => {
     yargs.positional('componentName', {

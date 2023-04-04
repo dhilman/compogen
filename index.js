@@ -1,5 +1,16 @@
 #!/usr/bin/env node
 "use strict";
+var __assign = (this && this.__assign) || function () {
+    __assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
+};
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -32,14 +43,17 @@ var fs = __importStar(require("fs-extra"));
 var yargs_1 = __importDefault(require("yargs"));
 // @ts-ignore
 var chalk_1 = __importDefault(require("chalk"));
+// @ts-ignore
+var default_template_1 = __importDefault(require("./default-template"));
 var readTemplateConfig = function () {
     try {
         var templateConfigPath = path.resolve(process.cwd(), 'template.js');
-        return require(templateConfigPath);
+        var userConfig = require(templateConfigPath);
+        return __assign(__assign({}, default_template_1.default), userConfig);
     }
     catch (error) {
         console.log(chalk_1.default.yellow('No template.js found or invalid format. Using default configuration.'));
-        return {};
+        return default_template_1.default;
     }
 };
 var index = function (config) {
@@ -53,25 +67,29 @@ var index = function (config) {
         return;
     }
     fs.ensureDirSync(componentDir);
-    var componentTemplate = (((_a = config.templates) === null || _a === void 0 ? void 0 : _a[config.t]) || '').replace(/\$COMPONENT_NAME/g, config.componentName);
-    fs.writeFileSync(componentPath, componentTemplate, { encoding: 'utf-8' });
-    console.log(chalk_1.default.green("Component created successfully: ".concat(componentPath)));
+    var componentTemplate = (((_a = config.templates) === null || _a === void 0 ? void 0 : _a[config.t]) || '');
+    createTemplate(componentPath, componentTemplate, config.componentName);
     if (config.s) {
-        var storybookTemplate = (((_b = config.templates) === null || _b === void 0 ? void 0 : _b.storybook) || '').replace(/\$COMPONENT_NAME/g, config.componentName);
-        var storybookPath = path.join(componentDir, "".concat(config.componentName, ".stories.").concat(config.ext));
-        fs.writeFileSync(storybookPath, storybookTemplate, { encoding: 'utf-8' });
-        console.log(chalk_1.default.green("Storybook file created successfully: ".concat(storybookPath)));
+        var storybookTemplate = (((_b = config.templates) === null || _b === void 0 ? void 0 : _b.storybook) || '');
+        var storybookPath = path.join(componentDir, "".concat(config.componentName, ".stories.").concat(config.ext, "x"));
+        createTemplate(storybookPath, storybookTemplate, config.componentName);
     }
     if (config.i) {
-        var indexTemplate = (((_c = config.templates) === null || _c === void 0 ? void 0 : _c.index) || "export { default } from './".concat(config.componentName, "';"))
-            .replace(/\$COMPONENT_NAME/g, config.componentName);
+        var indexTemplate = (((_c = config.templates) === null || _c === void 0 ? void 0 : _c.index) || "export { default } from './".concat(config.componentName, "';"));
         var indexPath = path.join(componentDir, "index.".concat(config.ext));
-        fs.writeFileSync(indexPath, indexTemplate, { encoding: 'utf-8' });
-        console.log(chalk_1.default.green("Index file created successfully: ".concat(indexPath)));
+        createTemplate(indexPath, indexTemplate, config.componentName);
     }
 };
-var argv = (0, yargs_1.default)(process.argv.slice(2))
-    .options({
+var createTemplate = function (fpath, template, componentName) {
+    var fname = path.basename(fpath);
+    if (!template) {
+        console.log(chalk_1.default.yellow("No template found for ".concat(fname, ". Skipping.")));
+    }
+    var data = template.replace(/\$COMPONENT_NAME/g, componentName);
+    fs.writeFileSync(fpath, data, { encoding: 'utf-8' });
+    console.log(chalk_1.default.green("File created successfully: ".concat(fname)));
+};
+var options = {
     dir: {
         alias: 'd',
         type: 'string',
@@ -110,7 +128,9 @@ var argv = (0, yargs_1.default)(process.argv.slice(2))
         description: 'Create a Storybook file from template',
         default: false,
     },
-})
+};
+var argv = (0, yargs_1.default)(process.argv.slice(2))
+    .options(options)
     .config(readTemplateConfig())
     .command('$0 <componentName>', 'Create a new component', function (yargs) {
     yargs.positional('componentName', {
