@@ -2,11 +2,13 @@
 import * as path from 'path';
 import * as fs from 'fs-extra';
 import yargs from 'yargs';
+// @ts-ignore
 import chalk from 'chalk';
 
 interface Config {
   dir: string;
   ext: 'ts' | 'js';
+  i: boolean;
   n: boolean;
   t: 'functional' | 'functionalWithRef';
   componentName: string;
@@ -15,6 +17,7 @@ interface Config {
     functional?: string;
     functionalWithRef?: string;
     storybook?: string;
+    index?: string;
   }
 }
 
@@ -28,12 +31,12 @@ const readTemplateConfig = (): Partial<Config> => {
   }
 };
 
-const createComponent = (config: Config) => {
+const index = (config: Config) => {
   const componentDir = config.n
     ? path.join(config.dir, config.componentName)
     : config.dir;
 
-  const componentPath = path.join(componentDir, `${config.componentName}.${config.ext}`);
+  const componentPath = path.join(componentDir, `${config.componentName}.${config.ext}x`);
 
   if (fs.existsSync(componentPath)) {
     console.log(chalk.red('Component already exists. Aborting.'));
@@ -42,17 +45,26 @@ const createComponent = (config: Config) => {
 
   fs.ensureDirSync(componentDir);
 
-  const componentTemplate = config.templates?.[config.t] || '';
+  const componentTemplate = (config.templates?.[config.t] || '').replace(/\$COMPONENT_NAME/g, config.componentName);
 
-  fs.writeFileSync(componentPath, componentTemplate, { encoding: 'utf-8' });
+  fs.writeFileSync(componentPath, componentTemplate, {encoding: 'utf-8'});
   console.log(chalk.green(`Component created successfully: ${componentPath}`));
 
   if (config.s) {
-    const storybookTemplate = config.templates?.storybook || '';
+    const storybookTemplate = (config.templates?.storybook || '').replace(/\$COMPONENT_NAME/g, config.componentName);
     const storybookPath = path.join(componentDir, `${config.componentName}.stories.${config.ext}`);
-    fs.writeFileSync(storybookPath, storybookTemplate, { encoding: 'utf-8' });
+    fs.writeFileSync(storybookPath, storybookTemplate, {encoding: 'utf-8'});
     console.log(chalk.green(`Storybook file created successfully: ${storybookPath}`));
   }
+
+  if (config.i) {
+    const indexTemplate = (config.templates?.index || `export { default } from './${config.componentName}';`)
+      .replace(/\$COMPONENT_NAME/g, config.componentName);
+    const indexPath = path.join(componentDir, `index.${config.ext}`);
+    fs.writeFileSync(indexPath, indexTemplate, {encoding: 'utf-8'});
+    console.log(chalk.green(`Index file created successfully: ${indexPath}`));
+  }
+
 };
 
 const argv = yargs(process.argv.slice(2))
@@ -70,6 +82,12 @@ const argv = yargs(process.argv.slice(2))
       description: 'File extension',
       default: 'ts',
     },
+    i: {
+      alias: 'index',
+      type: 'boolean',
+      description: 'Create an index file for the component',
+      default: false,
+    },
     n: {
       alias: 'nested',
       type: 'boolean',
@@ -83,11 +101,6 @@ const argv = yargs(process.argv.slice(2))
       description: 'Type of component',
       default: 'functional',
     },
-    componentName: {
-      type: 'string',
-      demandOption: true,
-      description: 'Name of the component',
-    },
     s: {
       alias: 'storybook',
       type: 'boolean',
@@ -96,6 +109,13 @@ const argv = yargs(process.argv.slice(2))
     },
   })
   .config(readTemplateConfig())
+  .command('$0 <componentName>', 'Create a new component', (yargs) => {
+    yargs.positional('componentName', {
+      type: 'string',
+      description: 'Name of the component',
+      demandOption: true,
+    });
+  })
   .argv;
 
-createComponent(argv as Config);
+index(argv as unknown as Config);

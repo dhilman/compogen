@@ -4,18 +4,37 @@ module.exports = {
     n: true,
     t: 'functional',
     templates: {
-        functional: `import React from 'react';
+        functional: `import React from "react";
 
-const <%= componentName %>: React.FC = () => {
-  return (
-    <div>
-      <%= componentName %> component
-    </div>
-  );
+interface Props {
+}
+
+const $COMPONENT_NAME = ({
+}: Props) => {
+    return (
+        <div>
+        </div>
+    );
 };
 
-export default <%= componentName %>;
-`,
+export default $COMPONENT_NAME;`,
+        storybook: `import $COMPONENT_NAME from "./COMPONENT_NAME";
+import { Meta, StoryObj } from "@storybook/react";
+
+const meta: Meta<typeof $COMPONENT_NAME> = {
+    title: "$COMPONENT_NAME",
+    component: $COMPONENT_NAME,
+    tags: ["autodocs"],
+}
+
+export default meta;
+type Story = StoryObj<typeof $COMPONENT_NAME>;
+
+export const Default: Story = {
+    args: { 
+    },
+}`,
+        index: `export { default } from "./$COMPONENT_NAME";`
     }
 };
 

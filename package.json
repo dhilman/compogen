@@ -1,10 +1,10 @@
 {
-  "name": "create-component-cli",
+  "name": "compogen",
   "version": "1.0.0",
   "description": "A CLI tool for creating new React components with custom templates",
-  "homepage": "https://github.com/dhilman/new-component#readme",
+  "homepage": "https://github.com/dhilman/compogen",
   "bugs": {
-    "url": "https://github.com/dhilman/new-component/issues"
+    "url": "https://github.com/dhilman/compogen/issues"
   },
   "author": "David Hilman",
   "license": "MIT",
@@ -13,23 +13,24 @@
     "cli",
     "component",
     "generator",
-    "template"
+    "template",
+    "react-component-generator",
+    "storybook"
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/dhilman/new-component.git"
+    "url": "git+https://github.com/dhilman/compogen.git"
   },
-  "main": "create-component.js",
+  "main": "index.js",
   "bin": {
-    "create-component": "dist/create-component.js"
+    "compogen": "./index.js"
   },
   "scripts": {
-    "build": "tsc",
-    "start": "./dist/create-component.js"
+    "build": "tsc index.ts --esModuleInterop",
+    "start": "./index.js"
   },
   "dependencies": {
     "chalk": "^4.1.2",
-    "commander": "^9.5.0",
     "esm": "^3.2.25",
     "fs-extra": "^11.1.1",
     "yargs": "^17.7.1"
